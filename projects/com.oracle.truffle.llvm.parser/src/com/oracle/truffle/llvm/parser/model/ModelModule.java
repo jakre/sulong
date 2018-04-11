@@ -92,6 +92,10 @@ public final class ModelModule {
         declares.add(declaration);
     }
 
+    public List<FunctionDeclaration> getDeclaredFunctions() {
+        return declares;
+    }
+
     public void addFunctionDefinition(FunctionDefinition definition) {
         defines.add(definition);
     }

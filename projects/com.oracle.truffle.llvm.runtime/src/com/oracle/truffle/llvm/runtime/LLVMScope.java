@@ -42,6 +42,7 @@ import com.oracle.truffle.api.interop.Resolve;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.interop.UnknownIdentifierException;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.llvm.runtime.LLVMContext.ExternalLibrary;
 import com.oracle.truffle.llvm.runtime.LLVMContext.FunctionFactory;
 import com.oracle.truffle.llvm.runtime.types.FunctionType;
@@ -50,6 +51,8 @@ import com.oracle.truffle.llvm.runtime.types.Type;
 import java.util.ArrayList;
 
 public final class LLVMScope implements TruffleObject {
+
+    private final HashMap<String, HashMap<Source, FunctionType>> declarations;
 
     private final HashMap<String, LLVMFunctionDescriptor> functions;
     private final ArrayList<String> functionKeys;
@@ -74,6 +77,7 @@ public final class LLVMScope implements TruffleObject {
         this.functionKeys = new ArrayList<>();
         this.parent = parent;
         this.globalVariableRegistry = new LLVMGlobalRegistry();
+        this.declarations = new HashMap<>();
     }
 
     @TruffleBoundary
@@ -128,7 +132,44 @@ public final class LLVMScope implements TruffleObject {
             LLVMFunctionDescriptor functionDescriptor = context.createFunctionDescriptor(generator);
             functions.put(name, functionDescriptor);
             functionKeys.add(name);
+            defineFunction(name, functionDescriptor.getType());
             return functionDescriptor;
+        }
+    }
+
+    @TruffleBoundary
+    private synchronized void defineFunction(String name, FunctionType type) {
+        if (parent != null) {
+            parent.defineFunction(name, type);
+        } else if (declarations.containsKey(name)) {
+            HashMap<Source, FunctionType> previousDeclarations = declarations.remove(name);
+            for (HashMap.Entry<Source, FunctionType> entry : previousDeclarations.entrySet()) {
+                assertFunctionDeclarationCompatibility(name, type, entry.getValue(), entry.getKey());
+            }
+        }
+    }
+
+    @TruffleBoundary
+    public synchronized void declareFunction(String name, Source source, FunctionType type) {
+        if (parent != null) {
+            // functions that a *.bc file only declares can never be file-local
+            parent.declareFunction(name, source, type);
+        } else if (functionExists(name)) {
+            LLVMFunctionDescriptor descriptor = getFunctionDescriptor(name);
+            assertFunctionDeclarationCompatibility(name, descriptor.getType(), type, source);
+        } else {
+            declarations.computeIfAbsent(name, k -> new HashMap<>()).put(source, type);
+        }
+    }
+
+    private static void assertFunctionDeclarationCompatibility(String function, FunctionType parsedType, FunctionType declaredType, Source declarationSource) {
+        if (!FunctionType.isCompatible(parsedType, declaredType)) {
+            String src = declarationSource.getPath();
+            if (src == null) {
+                src = String.valueOf(declarationSource.getURI());
+            }
+            String msg = String.format("Type mismatch: \"%s\" defined as \"%s\", but declared as \"%s\" in %s!", function, parsedType, declaredType, src);
+            throw new AssertionError(msg);
         }
     }
 

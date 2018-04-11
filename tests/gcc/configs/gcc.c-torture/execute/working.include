@@ -468,7 +468,6 @@ gcc-5.2.0/gcc/testsuite/gcc.c-torture/execute/20020103-1.c
 gcc-5.2.0/gcc/testsuite/gcc.c-torture/execute/20000503-1.c
 gcc-5.2.0/gcc/testsuite/gcc.c-torture/execute/compndlit-1.c
 gcc-5.2.0/gcc/testsuite/gcc.c-torture/execute/20001112-1.c
-gcc-5.2.0/gcc/testsuite/gcc.c-torture/execute/921110-1.c
 gcc-5.2.0/gcc/testsuite/gcc.c-torture/execute/20000314-1.c
 gcc-5.2.0/gcc/testsuite/gcc.c-torture/execute/pr25125.c
 gcc-5.2.0/gcc/testsuite/gcc.c-torture/execute/20000205-1.c

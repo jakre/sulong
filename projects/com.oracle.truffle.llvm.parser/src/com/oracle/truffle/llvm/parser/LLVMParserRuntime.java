@@ -42,6 +42,7 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.llvm.parser.model.ModelModule;
 import com.oracle.truffle.llvm.parser.model.SymbolImpl;
 import com.oracle.truffle.llvm.parser.model.enums.Linkage;
+import com.oracle.truffle.llvm.parser.model.functions.FunctionDeclaration;
 import com.oracle.truffle.llvm.parser.model.functions.FunctionDefinition;
 import com.oracle.truffle.llvm.parser.model.symbols.constants.aggregate.ArrayConstant;
 import com.oracle.truffle.llvm.parser.model.symbols.constants.aggregate.StructureConstant;
@@ -75,6 +76,8 @@ public final class LLVMParserRuntime {
     private static final String CONSTRUCTORS_VARNAME = "@llvm.global_ctors";
     private static final String DESTRUCTORS_VARNAME = "@llvm.global_dtors";
     private static final int LEAST_CONSTRUCTOR_PRIORITY = 65535;
+
+    private static final String FUNCTION_MAIN = "@main";
 
     private static final Comparator<Pair<Integer, ?>> ASCENDING_PRIORITY = (p1, p2) -> p1.getFirst() >= p2.getFirst() ? 1 : -1;
     private static final Comparator<Pair<Integer, ?>> DESCENDING_PRIORITY = (p1, p2) -> p1.getFirst() < p2.getFirst() ? 1 : -1;
@@ -123,8 +126,8 @@ public final class LLVMParserRuntime {
         }
 
         RootCallTarget mainFunctionCallTarget = null;
-        if (runtime.getScope().functionExists("@main")) {
-            LLVMFunctionDescriptor mainDescriptor = runtime.getScope().getFunctionDescriptor("@main");
+        if (runtime.getScope().functionExists(FUNCTION_MAIN)) {
+            LLVMFunctionDescriptor mainDescriptor = runtime.getScope().getFunctionDescriptor(FUNCTION_MAIN);
             LLVMFunctionDescriptor startDescriptor = runtime.getScope().getFunctionDescriptor("@_start");
             RootCallTarget startCallTarget = startDescriptor.getLLVMIRFunction();
             String applicationPath = source.getPath() == null ? "" : source.getPath().toString();
@@ -163,6 +166,16 @@ public final class LLVMParserRuntime {
     }
 
     private void registerFunctions(ModelModule model) {
+        for (FunctionDeclaration function : model.getDeclaredFunctions()) {
+            if (!FUNCTION_MAIN.equals(function.getName())) {
+                // "@main" has several valid signatures that we distinguish in @_start.
+                // if we were to create a descriptor here, it has the type we declare in
+                // libsulong.bc even after a differing definition. as a result value profiling in
+                // @_start doesn't expect the kind of actually returned value
+                registerDeclaredFunction(function);
+            }
+        }
+
         for (FunctionDefinition function : model.getDefinedFunctions()) {
             registerFunction(function, model);
         }
@@ -174,6 +187,10 @@ public final class LLVMParserRuntime {
                 registerFunctionAlias(alias, (FunctionDefinition) value);
             }
         }
+    }
+
+    private void registerDeclaredFunction(FunctionDeclaration header) {
+        scope.declareFunction(header.getName(), source, header.getType());
     }
 
     private void registerFunction(FunctionDefinition function, ModelModule model) {

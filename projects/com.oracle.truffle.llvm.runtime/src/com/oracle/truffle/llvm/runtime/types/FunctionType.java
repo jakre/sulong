@@ -41,6 +41,39 @@ import com.oracle.truffle.llvm.runtime.types.visitors.TypeVisitor;
 
 public final class FunctionType extends Type {
 
+    public static boolean isCompatible(FunctionType definition, FunctionType declaration) {
+        if (definition.equals(declaration)) {
+            return true;
+        }
+
+        if (!definition.getReturnType().equals(declaration.getReturnType())) {
+            // declaring a non-void function as void just ignores the return type
+            if (!VoidType.INSTANCE.equals(declaration.getReturnType())) {
+                return false;
+            }
+        }
+
+        final Type[] definedParams = definition.getArgumentTypes();
+        final Type[] declaredParams = declaration.getArgumentTypes();
+        if (definedParams.length > declaredParams.length) {
+            // all defined parameters must be given
+            return false;
+        } else if ((definedParams.length < declaredParams.length && !definition.isVarargs()) || (definedParams.length == declaredParams.length && declaration.isVarargs() && !definition.isVarargs())) {
+            // additional declared parameters are only valid if the definition allows varargs
+            return false;
+        }
+
+        for (int i = 0; i < definedParams.length; i++) {
+            final Type definedParam = definedParams[i];
+            final Type declaredParam = declaredParams[i];
+            if (!definedParam.equals(declaredParam)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     @CompilationFinal private Assumption returnTypeAssumption;
     @CompilationFinal private Type returnType;
 
