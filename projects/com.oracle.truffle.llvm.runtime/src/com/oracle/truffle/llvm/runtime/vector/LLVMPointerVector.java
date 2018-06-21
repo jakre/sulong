@@ -30,10 +30,13 @@
 package com.oracle.truffle.llvm.runtime.vector;
 
 import com.oracle.truffle.llvm.runtime.pointer.LLVMNativePointer;
+import com.oracle.truffle.llvm.runtime.types.PointerType;
+import com.oracle.truffle.llvm.runtime.types.Type;
+
 import java.util.Arrays;
 import java.util.function.BiFunction;
 
-public final class LLVMPointerVector {
+public final class LLVMPointerVector extends LLVMVector {
     private final long[] vector;    // no LLVMNativePointer stored to improve performance
 
     public static LLVMPointerVector create(LLVMNativePointer[] vector) {
@@ -233,8 +236,19 @@ public final class LLVMPointerVector {
         return create(copyOf);
     }
 
+    @Override
     public int getLength() {
         return vector.length;
+    }
+
+    @Override
+    public Type getElementType() {
+        return PointerType.VOID;
+    }
+
+    @Override
+    public Object getElement(int index) {
+        return index >= 0 && index < vector.length ? vector[index] : null;
     }
 
     public LLVMI1Vector doCompare(LLVMPointerVector other, BiFunction<Long, Long, Boolean> compare) {

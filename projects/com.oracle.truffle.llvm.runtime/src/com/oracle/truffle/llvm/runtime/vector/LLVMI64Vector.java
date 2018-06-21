@@ -33,9 +33,11 @@ import java.util.Arrays;
 import java.util.function.BiFunction;
 
 import com.oracle.truffle.api.CompilerDirectives.ValueType;
+import com.oracle.truffle.llvm.runtime.types.PrimitiveType;
+import com.oracle.truffle.llvm.runtime.types.Type;
 
 @ValueType
-public final class LLVMI64Vector {
+public final class LLVMI64Vector extends LLVMVector {
 
     private final long[] vector;
 
@@ -199,8 +201,19 @@ public final class LLVMI64Vector {
         return create(copyOf);
     }
 
+    @Override
     public int getLength() {
         return vector.length;
+    }
+
+    @Override
+    public Type getElementType() {
+        return PrimitiveType.I64;
+    }
+
+    @Override
+    public Object getElement(int index) {
+        return index >= 0 && index < vector.length ? vector[index] : null;
     }
 
     public LLVMI1Vector doCompare(LLVMI64Vector other, BiFunction<Long, Long, Boolean> comparison) {

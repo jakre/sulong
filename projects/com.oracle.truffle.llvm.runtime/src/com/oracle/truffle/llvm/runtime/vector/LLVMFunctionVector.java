@@ -33,8 +33,10 @@ import java.util.Arrays;
 
 import com.oracle.truffle.llvm.runtime.LLVMFunctionDescriptor;
 import com.oracle.truffle.llvm.runtime.pointer.LLVMNativePointer;
+import com.oracle.truffle.llvm.runtime.types.PointerType;
+import com.oracle.truffle.llvm.runtime.types.Type;
 
-public final class LLVMFunctionVector {
+public final class LLVMFunctionVector extends LLVMVector {
     private final Object[] vector;
 
     public static LLVMFunctionVector create(LLVMFunctionDescriptor[] vector) {
@@ -99,7 +101,18 @@ public final class LLVMFunctionVector {
         return create(copyOf);
     }
 
+    @Override
     public int getLength() {
         return vector.length;
+    }
+
+    @Override
+    public Type getElementType() {
+        return PointerType.VOID;
+    }
+
+    @Override
+    public Object getElement(int index) {
+        return index >= 0 && index < vector.length ? vector[index] : null;
     }
 }
