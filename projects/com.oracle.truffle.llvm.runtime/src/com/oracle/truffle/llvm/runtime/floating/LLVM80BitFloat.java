@@ -48,6 +48,7 @@ import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.llvm.runtime.LLVMContext;
+import com.oracle.truffle.llvm.runtime.LLVMInternalValue;
 import com.oracle.truffle.llvm.runtime.NFIContextExtension;
 import com.oracle.truffle.llvm.runtime.floating.LLVM80BitFloatFactory.LLVM80BitFloatNativeCallNodeGen;
 import com.oracle.truffle.llvm.runtime.memory.LLVMMemory;
@@ -56,7 +57,7 @@ import com.oracle.truffle.llvm.runtime.nodes.api.LLVMNode;
 import com.oracle.truffle.llvm.runtime.pointer.LLVMNativePointer;
 
 @ValueType
-public final class LLVM80BitFloat implements LLVMArithmetic {
+public final class LLVM80BitFloat implements LLVMArithmetic, LLVMInternalValue {
 
     private static final int BIT_TO_HEX_FACTOR = 4;
     public static final int BIT_WIDTH = 80;
@@ -68,11 +69,14 @@ public final class LLVM80BitFloat implements LLVMArithmetic {
     private static final int HEX_DIGITS_FRACTION = FRACTION_BIT_WIDTH / BIT_TO_HEX_FACTOR;
 
     @Override
+    @TruffleBoundary
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("sign: " + getSign() + "\n");
-        sb.append("exponent: " + getBinaryString(EXPONENT_BIT_WIDTH, getExponent()) + "\n");
-        sb.append("fraction: " + getBinaryString(FRACTION_BIT_WIDTH, getFraction()) + " " + getHexString(HEX_DIGITS_FRACTION, getFraction()) + "\n");
+        final StringBuilder sb = new StringBuilder();
+        sb.append(toLLVMString(this)).append(" (\n");
+        sb.append("sign: ").append(getSign()).append("\n");
+        sb.append("exponent: ").append(getBinaryString(EXPONENT_BIT_WIDTH, getExponent())).append('\n');
+        sb.append("fraction: ").append(getBinaryString(FRACTION_BIT_WIDTH, getFraction())).append(' ').append(getHexString(HEX_DIGITS_FRACTION, getFraction())).append('\n');
+        sb.append("\n)");
         return sb.toString();
     }
 
