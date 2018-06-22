@@ -29,45 +29,41 @@
  */
 package com.oracle.truffle.llvm.runtime.vector;
 
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.interop.ForeignAccess;
-import com.oracle.truffle.api.interop.TruffleObject;
-import com.oracle.truffle.llvm.runtime.types.Type;
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.interop.MessageResolution;
+import com.oracle.truffle.api.interop.Resolve;
+import com.oracle.truffle.api.interop.UnknownIdentifierException;
+import com.oracle.truffle.api.nodes.Node;
 
-public abstract class LLVMVector implements TruffleObject {
+@MessageResolution(receiverType = LLVMVector.class)
+public class LLVMVectorMessageResolution {
 
-    public static boolean isInstance(TruffleObject obj) {
-        return obj instanceof LLVMVector;
-    }
+    @Resolve(message = "HAS_SIZE")
+    abstract static class HasSizeResolution extends Node {
 
-    public abstract Type getElementType();
-
-    public abstract int getLength();
-
-    public abstract Object getElement(int index);
-
-    @TruffleBoundary
-    private String getTypedElementString(int index) {
-        return String.format("%s %s", getElementType(), getElement(index));
-    }
-
-    @Override
-    @TruffleBoundary
-    public String toString() {
-        final StringBuilder builder = new StringBuilder();
-        builder.append("< ").append(getLength()).append(" x ").append(getElementType()).append(" > < ");
-        if (getLength() > 0) {
-            builder.append(getTypedElementString(0));
+        public Object access(@SuppressWarnings("unused") LLVMVector receiver) {
+            return true;
         }
-        for (int i = 1; i < getLength(); i++) {
-            builder.append(", ").append(getTypedElementString(i));
-        }
-        builder.append(" >");
-        return builder.toString();
     }
 
-    @Override
-    public ForeignAccess getForeignAccess() {
-        return LLVMVectorMessageResolutionForeign.ACCESS;
+    @Resolve(message = "GET_SIZE")
+    abstract static class GetSizeResolution extends Node {
+
+        public Object access(LLVMVector receiver) {
+            return receiver.getLength();
+        }
+    }
+
+    @Resolve(message = "READ")
+    abstract static class ReadResolution extends Node {
+
+        public Object access(LLVMVector receiver, int index) {
+            if (index >= 0 && index < receiver.getLength()) {
+                return receiver.getElement(index);
+            } else {
+                CompilerDirectives.transferToInterpreter();
+                throw UnknownIdentifierException.raise(receiver + " does not have index " + index);
+            }
+        }
     }
 }
