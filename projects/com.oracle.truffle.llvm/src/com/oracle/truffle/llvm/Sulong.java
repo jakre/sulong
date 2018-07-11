@@ -34,6 +34,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.ServiceLoader;
 
+import com.oracle.truffle.api.nodes.ExecutableNode;
+import com.oracle.truffle.llvm.runtime.debug.scope.LLVMDebuggerValueLookup;
 import org.graalvm.options.OptionDescriptor;
 import org.graalvm.options.OptionDescriptors;
 
@@ -116,6 +118,21 @@ public final class Sulong extends LLVMLanguage {
         Source source = request.getSource();
         LLVMContext context = findLLVMContext();
         return new Runner(context, getNodeFactory(context.getEnv())).parse(source);
+    }
+
+    @Override
+    protected ExecutableNode parse(InlineParsingRequest request) throws Exception {
+        final Source source = request.getSource();
+        final LLVMContext context = findLLVMContext();
+        if ("eval in context".equals(source.getName()) && context.getEnv().getOptions().get(SulongEngineOption.ENABLE_LVI)) {
+            // the debugger tries to evaluate a code snippet
+            final String code = String.valueOf(source.getCharacters());
+            final ExecutableNode value = LLVMDebuggerValueLookup.findValue(this, code, context, request.getLocation());
+            if (value != null) {
+                return value;
+            }
+        }
+        return super.parse(request);
     }
 
     @Override

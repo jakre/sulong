@@ -53,7 +53,7 @@ import java.util.stream.Collectors;
 
 public final class LLVMDebuggerScopeFactory {
 
-    private static LLVMNode findStatementNode(Node suspendedNode) {
+    static LLVMNode findStatementNode(Node suspendedNode) {
         for (Node node = suspendedNode; node != null; node = node.getParent()) {
             if (node instanceof LLVMNode) {
                 final LLVMNode llvmNode = (LLVMNode) node;
