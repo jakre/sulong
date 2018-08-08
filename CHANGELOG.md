@@ -4,6 +4,7 @@ New features:
 
 * Support for IR-level debugging
 * New polyglot cast functions for primitive array types.
+* Preliminary support for LLVM 7.0
 
 # Version 1.0.0 RC5
 
