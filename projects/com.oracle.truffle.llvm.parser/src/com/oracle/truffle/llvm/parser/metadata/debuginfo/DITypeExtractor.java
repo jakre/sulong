@@ -57,6 +57,7 @@ import com.oracle.truffle.llvm.parser.metadata.MDVoidNode;
 import com.oracle.truffle.llvm.parser.metadata.MetadataValueList;
 import com.oracle.truffle.llvm.parser.metadata.MetadataVisitor;
 import com.oracle.truffle.llvm.parser.model.SymbolImpl;
+import com.oracle.truffle.llvm.parser.nodes.LLVMSymbolReadResolver;
 import com.oracle.truffle.llvm.runtime.debug.type.LLVMSourceArrayLikeType;
 import com.oracle.truffle.llvm.runtime.debug.type.LLVMSourceBasicType;
 import com.oracle.truffle.llvm.runtime.debug.type.LLVMSourceDecoratorType;
@@ -68,6 +69,8 @@ import com.oracle.truffle.llvm.runtime.debug.type.LLVMSourceStaticMemberType;
 import com.oracle.truffle.llvm.runtime.debug.type.LLVMSourceStructLikeType;
 import com.oracle.truffle.llvm.runtime.debug.type.LLVMSourceType;
 import com.oracle.truffle.llvm.runtime.debug.scope.LLVMSourceLocation;
+import com.oracle.truffle.llvm.runtime.except.LLVMParserException;
+
 import static com.oracle.truffle.llvm.runtime.debug.type.LLVMSourceType.UNKNOWN;
 
 final class DITypeExtractor implements MetadataVisitor {
@@ -381,7 +384,11 @@ final class DITypeExtractor implements MetadataVisitor {
     @Override
     public void visit(MDSubrange mdRange) {
         // for array types the member descriptors contain this as the only element
-        parsedTypes.put(mdRange, new IntermediaryType(() -> COUNT_NAME, mdRange.getSize(), 0L, 0L));
+        Long countValue = LLVMSymbolReadResolver.evaluateLongIntegerConstant(MDValue.getIfInstance(mdRange.getCount()));
+        if (countValue == null) {
+            throw new LLVMParserException("Failed to extract element count for array type from " + mdRange.getCount());
+        }
+        parsedTypes.put(mdRange, new IntermediaryType(() -> COUNT_NAME, countValue, 0L, 0L));
     }
 
     @Override
