@@ -132,7 +132,22 @@ suite = {
       "dependencies" : [
         "truffle:TRUFFLE_API",
         "truffle:TRUFFLE_NFI",
-        "com.oracle.truffle.llvm.spi",
+        "com.oracle.truffle.llvm.spi"
+      ],
+      "checkstyle" : "com.oracle.truffle.llvm.runtime",
+      "checkstyleVersion" : "8.8",
+      "annotationProcessors" : ["truffle:TRUFFLE_DSL_PROCESSOR"],
+      "javaCompliance" : "1.8",
+      "workingSets" : "Truffle, LLVM",
+      "license" : "BSD-new",
+    },
+
+    "com.oracle.truffle.llvm.instruments" : {
+      "subDir" : "projects",
+      "sourceDirs" : ["src"],
+      "dependencies" : [
+        "truffle:TRUFFLE_API",
+        "truffle:TRUFFLE_DEBUG"
       ],
       "checkstyle" : "com.oracle.truffle.llvm.runtime",
       "checkstyleVersion" : "8.8",
@@ -392,10 +407,14 @@ suite = {
   "distributions" : {
     "SULONG" : {
       "subDir" : "projects",
-      "dependencies" : ["com.oracle.truffle.llvm"],
+      "dependencies" : [
+        "com.oracle.truffle.llvm",
+        "com.oracle.truffle.llvm.instruments"
+      ],
       "distDependencies" : [
         "truffle:TRUFFLE_API",
         "truffle:TRUFFLE_NFI",
+        "truffle:TRUFFLE_DEBUG",
         "SULONG_LIBS",
       ],
       "javaProperties" : {
