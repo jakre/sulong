@@ -53,7 +53,7 @@ public final class LLVMTracerInstrument extends TruffleInstrument {
         env.registerService(this);
 
         final SourceSectionFilter.Builder builder = SourceSectionFilter.newBuilder();
-        builder.mimeTypeIs("text/plain");
+        builder.mimeTypeIs("text/x-llvmir");
         builder.tagIs(StandardTags.StatementTag.class, StandardTags.RootTag.class);
         final SourceSectionFilter filter = builder.build();
 
