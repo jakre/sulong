@@ -29,6 +29,7 @@
  */
 package com.oracle.truffle.llvm.runtime.nodes.api;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrumentation.GenerateWrapper;
 import com.oracle.truffle.api.instrumentation.InstrumentableNode;
@@ -54,9 +55,23 @@ public abstract class LLVMExpressionNode extends LLVMNode implements Instrumenta
         return new LLVMExpressionNodeWrapper(this, probe);
     }
 
+    private static void assertInterop(Object obj) {
+        if (!(obj instanceof Number || obj instanceof TruffleObject) && obj != null) {
+            CompilerDirectives.transferToInterpreter();
+            System.out.println("Not an interop-ready value: [" + obj.getClass().getSimpleName() + "] " + obj);
+        }
+    }
+
     @GenerateWrapper.OutgoingConverter
-    Object convertOutgoing(@SuppressWarnings("unused") Object object) {
-        return null;
+    Object convertOutgoing(Object object) {
+        assertInterop(object);
+        return object;
+    }
+
+    @GenerateWrapper.IncomingConverter
+    Object convertIncoming(Object object) {
+        assertInterop(object);
+        return object;
     }
 
     @Override

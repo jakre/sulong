@@ -34,6 +34,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.FrameUtil;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.llvm.runtime.LLVMInternalTruffleObject;
 
 /**
  * Implements a stack that grows from the top to the bottom. The stack is allocated lazily when it
@@ -62,7 +63,7 @@ public final class LLVMStack {
         isAllocated = false;
     }
 
-    public final class StackPointer implements AutoCloseable {
+    public final class StackPointer implements AutoCloseable, LLVMInternalTruffleObject {
         private long basePointer;
         private final long uniquesRegionBasePointer;
 

@@ -33,6 +33,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -133,9 +134,11 @@ public class ProcessUtil {
         if (TestOptions.TEST_AOT_IMAGE == null) {
             org.graalvm.polyglot.Source source = org.graalvm.polyglot.Source.newBuilder(LLVMLanguage.NAME, bitcodeFile).build();
             Builder builder = Context.newBuilder();
+            Map<String, String> newOptions = new HashMap<>(options);
+            newOptions.put("TraceLLVM", "out");
             try (CaptureOutput out = captureOutput.apply(builder)) {
                 int result;
-                try (Context context = builder.arguments(LLVMLanguage.NAME, args).options(options).allowAllAccess(true).build()) {
+                try (Context context = builder.arguments(LLVMLanguage.NAME, args).options(newOptions).allowAllAccess(true).build()) {
                     Value main = context.eval(source);
                     if (!main.canExecute()) {
                         throw new LLVMLinkerException("No main function found.");
