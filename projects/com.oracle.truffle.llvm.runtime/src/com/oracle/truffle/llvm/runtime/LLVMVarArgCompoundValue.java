@@ -76,6 +76,10 @@ public final class LLVMVarArgCompoundValue {
 
     @Override
     public String toString() {
-        return String.format("0x%x (%d align %d)", getAddr(), getSize(), getAlignment());
+        if (addr instanceof Number) {
+            return String.format("0x%x (%d align %d)", addr, getSize(), getAlignment());
+        } else {
+            return String.format("%s (%d align %d)", getAddr(), getSize(), getAlignment());
+        }
     }
 }
