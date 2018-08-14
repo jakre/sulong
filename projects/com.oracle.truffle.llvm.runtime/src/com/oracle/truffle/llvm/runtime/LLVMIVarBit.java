@@ -40,7 +40,7 @@ import com.oracle.truffle.api.CompilerDirectives.ValueType;
 
 // see https://bugs.chromium.org/p/nativeclient/issues/detail?id=3360 for use cases where variable ints arise
 @ValueType
-public final class LLVMIVarBit {
+public final class LLVMIVarBit implements LLVMInternalTruffleObject {
 
     private final int bits;
 
