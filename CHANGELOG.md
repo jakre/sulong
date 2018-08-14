@@ -12,7 +12,7 @@ Changes:
 
 New features:
 
-* Support for IR-level debugging
+* Support for IR-level debugging and tracing.
 * New polyglot cast functions for primitive array types.
 * Support for function pointer members in `polyglot_as_typed`.
 
