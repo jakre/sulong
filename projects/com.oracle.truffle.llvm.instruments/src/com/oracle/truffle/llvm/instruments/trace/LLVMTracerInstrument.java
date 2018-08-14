@@ -29,6 +29,12 @@
  */
 package com.oracle.truffle.llvm.instruments.trace;
 
+import java.io.BufferedOutputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
+
 import com.oracle.truffle.api.Option;
 import com.oracle.truffle.api.instrumentation.Instrumenter;
 import com.oracle.truffle.api.instrumentation.SourceSectionFilter;
@@ -48,6 +54,12 @@ public final class LLVMTracerInstrument extends TruffleInstrument {
     @Option(name = "", category = OptionCategory.DEBUG, help = "Enable tracing of executed instructions (defaults to \'stdout\', can be set to \'stderr\').") static final OptionKey<String> TRACELLVM = new OptionKey<>(
                     String.valueOf("stdout"));
 
+    private PrintStream traceTarget;
+
+    public LLVMTracerInstrument() {
+        traceTarget = null;
+    }
+
     @Override
     protected void onCreate(Env env) {
         env.registerService(this);
@@ -58,11 +70,53 @@ public final class LLVMTracerInstrument extends TruffleInstrument {
         final SourceSectionFilter filter = builder.build();
 
         final Instrumenter instrumenter = env.getInstrumenter();
-        instrumenter.attachExecutionEventFactory(filter, new LLVMTraceNodeFactory(env));
+        traceTarget = createTargetStream(env, env.getOptions().get(LLVMTracerInstrument.TRACELLVM));
+        instrumenter.attachExecutionEventFactory(filter, new LLVMTraceNodeFactory(traceTarget));
+    }
+
+    @Override
+    protected void onDispose(Env env) {
+        traceTarget.flush();
+        traceTarget.close();
     }
 
     @Override
     protected OptionDescriptors getOptionDescriptors() {
         return new LLVMTracerInstrumentOptionDescriptors();
+    }
+
+    private static final String FILE_TARGET_PREFIX = "file://";
+
+    private static PrintStream createTargetStream(TruffleInstrument.Env env, String target) {
+        if (target == null) {
+            throw new IllegalArgumentException("Target for trace unspecified!");
+        }
+
+        final OutputStream targetStream;
+        switch (target) {
+            case "out":
+            case "stdout":
+                targetStream = env.out();
+                break;
+
+            case "err":
+            case "stderr":
+                targetStream = env.err();
+                break;
+
+            default:
+                if (target.startsWith(FILE_TARGET_PREFIX)) {
+                    final String fileName = target.substring(FILE_TARGET_PREFIX.length());
+                    try {
+                        targetStream = new BufferedOutputStream(new FileOutputStream(fileName, true));
+                    } catch (FileNotFoundException e) {
+                        throw new IllegalArgumentException("Invalid file: " + fileName, e);
+                    }
+                } else {
+                    throw new IllegalArgumentException("Invalid target for tracing: " + target);
+                }
+        }
+
+        return new PrintStream(targetStream);
     }
 }

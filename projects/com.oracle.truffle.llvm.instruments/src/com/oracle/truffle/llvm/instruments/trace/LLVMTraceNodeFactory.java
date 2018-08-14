@@ -29,7 +29,6 @@
  */
 package com.oracle.truffle.llvm.instruments.trace;
 
-import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.Arrays;
 
@@ -39,57 +38,30 @@ import com.oracle.truffle.api.instrumentation.EventContext;
 import com.oracle.truffle.api.instrumentation.ExecutionEventNode;
 import com.oracle.truffle.api.instrumentation.ExecutionEventNodeFactory;
 import com.oracle.truffle.api.instrumentation.StandardTags;
-import com.oracle.truffle.api.instrumentation.TruffleInstrument;
 import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.source.SourceSection;
 
 final class LLVMTraceNodeFactory implements ExecutionEventNodeFactory {
 
-    private static PrintStream createTargetStream(TruffleInstrument.Env env, String target) {
-        if (target == null) {
-            throw new IllegalArgumentException("Target for trace unspecified!");
-        }
-
-        final OutputStream targetStream;
-        switch (target) {
-            case "out":
-            case "stdout":
-                targetStream = env.out();
-                break;
-
-            case "err":
-            case "stderr":
-                targetStream = env.err();
-                break;
-
-            default:
-                throw new IllegalArgumentException("Invalid target for tracing: " + target);
-        }
-
-        return new PrintStream(targetStream);
-    }
-
-    private final TruffleInstrument.Env env;
+    private final PrintStream traceTarget;
     private final TraceContext traceContext;
 
-    LLVMTraceNodeFactory(TruffleInstrument.Env env) {
-        this.env = env;
+    LLVMTraceNodeFactory(PrintStream target) {
+        this.traceTarget = target;
         this.traceContext = new TraceContext();
     }
 
     @Override
     public ExecutionEventNode create(EventContext eventContext) {
-        final PrintStream target = createTargetStream(env, env.getOptions().get(LLVMTracerInstrument.TRACELLVM));
-
         if (eventContext.hasTag(StandardTags.RootTag.class)) {
             assert eventContext.getInstrumentedNode() != null;
             final RootNode rootNode = eventContext.getInstrumentedNode().getRootNode();
             assert rootNode != null;
             final SourceSection sourceSection = rootNode.getSourceSection();
-            return new RootTrace(traceContext, target, rootNode.getName(), toTraceLine(sourceSection, false));
+            return new RootTrace(traceContext, traceTarget, rootNode.getName(), toTraceLine(sourceSection, false));
 
         } else if (eventContext.hasTag(StandardTags.StatementTag.class)) {
-            return new StatementTrace(traceContext, target, toTraceLine(eventContext.getInstrumentedSourceSection(), true));
+            return new StatementTrace(traceContext, traceTarget, toTraceLine(eventContext.getInstrumentedSourceSection(), true));
 
         } else {
             throw new IllegalStateException("Unknown node for tracing: " + eventContext.getInstrumentedNode());
@@ -160,6 +132,10 @@ final class LLVMTraceNodeFactory implements ExecutionEventNodeFactory {
             out.println(message);
         }
 
+        void flushTraceBuffer() {
+            out.flush();
+        }
+
         TraceContext getTraceContext() {
             return context;
         }
@@ -198,6 +174,7 @@ final class LLVMTraceNodeFactory implements ExecutionEventNodeFactory {
         protected void onEnter(VirtualFrame frame) {
             getTraceContext().enterFunction();
             trace(enterPrefix + Arrays.toString(frame.getArguments()));
+            flushTraceBuffer();
         }
 
         @Override
