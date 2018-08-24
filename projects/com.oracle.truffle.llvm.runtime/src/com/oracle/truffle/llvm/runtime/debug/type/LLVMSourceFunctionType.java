@@ -50,7 +50,15 @@ public final class LLVMSourceFunctionType extends LLVMSourceType {
         setName(() -> {
             CompilerDirectives.transferToInterpreter();
             String name = getReturnType().getName();
-            name += getParameterTypes().stream().map(LLVMSourceType::getName).collect(Collectors.joining(", ", "(", ")"));
+            final String suffix;
+            if (!isVarArgs()) {
+                suffix = ")";
+            } else if (getParameterTypes().size() == 0) {
+                suffix = "...)";
+            } else {
+                suffix = ", ...)";
+            }
+            name += getParameterTypes().stream().map(LLVMSourceType::getName).collect(Collectors.joining(", ", "(", suffix));
             return name;
         });
     }
@@ -68,8 +76,10 @@ public final class LLVMSourceFunctionType extends LLVMSourceType {
     public List<LLVMSourceType> getParameterTypes() {
         if (types.size() <= 1) {
             return Collections.emptyList();
+        } else if (isVarArgs()) {
+            return types.subList(1, types.size() - 1);
         } else {
-            return types.subList(1, types.size() - (isVarArgs() ? 1 : 0));
+            return types.subList(1, types.size());
         }
     }
 
