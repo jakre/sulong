@@ -147,7 +147,6 @@ suite = {
       "sourceDirs" : ["src"],
       "dependencies" : [
         "truffle:TRUFFLE_API",
-        "truffle:TRUFFLE_DEBUG"
       ],
       "checkstyle" : "com.oracle.truffle.llvm.runtime",
       "checkstyleVersion" : "8.8",
@@ -414,7 +413,6 @@ suite = {
       "distDependencies" : [
         "truffle:TRUFFLE_API",
         "truffle:TRUFFLE_NFI",
-        "truffle:TRUFFLE_DEBUG",
         "SULONG_LIBS",
       ],
       "javaProperties" : {
